@@ -18,14 +18,6 @@ st.markdown("""
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }
     
-    /* Clean Layout Header Elements */
-    .header-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-    
     .main-title {
         font-size: 2.25rem !important;
         font-weight: 600 !important;
@@ -33,14 +25,14 @@ st.markdown("""
         margin: 0 !important;
     }
     
-    /* CRITICAL CACHE BLOCK REMEDIAL FIX: High-priority scoped card class */
+    /* PREMIUM POETRY CARD WRAPPER */
     .premium-poetry-card {
         background-color: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 14px !important;
         padding: 24px !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
-        margin-bottom: 16px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) !important;
+        margin-bottom: 20px !important;
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
     
@@ -50,28 +42,26 @@ st.markdown("""
         border-color: #cbd5e1 !important;
     }
     
-    /* Deep target Streamlit internal container boxes to force light background rendering */
-    div[data-testid="stVComponent"] > div[data-testid="stContainer"] {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
-        border-radius: 14px !important;
-    }
-    
-    /* Support for Native Dark Mode Theme if turned on */
+    /* Support for Native Dark Mode Theme */
     @media (prefers-color-scheme: dark) {
-        .premium-poetry-card, div[data-testid="stVComponent"] > div[data-testid="stContainer"] {
+        .premium-poetry-card {
             background-color: #1e1e1e !important;
             border: 1px solid #2e2e2e !important;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
         }
+        .premium-poetry-card:hover {
+            border-color: #444444 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+        }
+        .card-title { color: #ffffff !important; }
     }
     
     /* Card Typography Elements */
     .card-title {
         font-size: 1.25rem !important;
         font-weight: 600 !important;
-        margin-bottom: 2px !important;
+        margin-bottom: 4px !important;
+        color: #1e293b;
     }
     
     .card-author {
@@ -86,6 +76,7 @@ st.markdown("""
     .card-preview {
         font-size: 0.95rem !important;
         line-height: 1.6 !important;
+        color: inherit;
         opacity: 0.85;
         margin-bottom: 16px !important;
         white-space: pre-wrap !important;
@@ -242,26 +233,29 @@ if not df.empty:
         grid_cols = st.columns(2)
         for i, row in enumerate(reversed_df.itertuples()):
             with grid_cols[i % 2]:
-                # Wrap everything in a dedicated markdown div box to enforce card separation styles explicitly
-                st.markdown(f'<div class="premium-poetry-card">', unsafe_allow_html=True)
-                with st.container():
-                    st.markdown(f'<div class="card-title">{row.Title}</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="card-author">By {row.Author}</div>', unsafe_allow_html=True)
-                    
-                    raw_content = getattr(row, 'Content', '')
-                    snippet = raw_content if len(raw_content) <= 100 else raw_content[:100] + "..."
-                    st.markdown(f'<div class="card-preview">{snippet}</div>', unsafe_allow_html=True)
-                    
-                    if st.button("Read Piece →", key=f"open_{row.orig_idx}"):
-                        open_poem_modal(
-                            row.orig_idx, 
-                            row.Title, 
-                            row.Author, 
-                            getattr(row, 'Date', ''), 
-                            raw_content, 
-                            df.drop(columns=['orig_idx'])
-                        )
-                st.markdown(f'</div>', unsafe_allow_html=True)
+                # CLEAN INJECTION: The HTML elements and text are fully locked together within the card block
+                raw_content = getattr(row, 'Content', '')
+                snippet = raw_content if len(raw_content) <= 100 else raw_content[:100] + "..."
+                
+                card_html = f"""
+                <div class="premium-poetry-card">
+                    <div class="card-title">{row.Title}</div>
+                    <div class="card-author">By {row.Author}</div>
+                    <div class="card-preview">{snippet}</div>
+                </div>
+                """
+                st.markdown(card_html, unsafe_allow_html=True)
+                
+                # The button sits neatly right under the layout text block
+                if st.button("Read Piece →", key=f"open_{row.orig_idx}"):
+                    open_poem_modal(
+                        row.orig_idx, 
+                        row.Title, 
+                        row.Author, 
+                        getattr(row, 'Date', ''), 
+                        raw_content, 
+                        df.drop(columns=['orig_idx'])
+                    )
     else:
         st.markdown("<p style='color:gray; font-style:italic;'>No archives match your search criteria.</p>", unsafe_allow_html=True)
 else:
