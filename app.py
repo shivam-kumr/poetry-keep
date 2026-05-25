@@ -33,20 +33,34 @@ st.markdown("""
         margin: 0 !important;
     }
     
-    /* Elegant Bordered Poetry Cards for Homepage Separation */
+    /* FIX: Premium Bordered Poetry Cards with Light Soft Shadow and Solid Background */
     div[data-testid="stContainer"] {
-        background-color: transparent;
-        border: 1px solid rgba(128, 128, 128, 0.2) !important;
-        border-radius: 12px !important;
-        padding: 20px !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.01) !important;
-        transition: all 0.25s ease !important;
+        background-color: #ffffff !important; /* Soft premium white backing */
+        border: 1px solid #e2e8f0 !important; /* Clean, light separating border line */
+        border-radius: 14px !important;
+        padding: 24px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important; /* Elegant subtle floating shadow */
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
     
+    /* Smooth hover effect like Apple/Google cards */
     div[data-testid="stContainer"]:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.04) !important;
-        border-color: rgba(128, 128, 128, 0.35) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06) !important;
+        border-color: #cbd5e1 !important;
+    }
+    
+    /* Support for Native Dark Mode Theme if turned on */
+    @media (prefers-color-scheme: dark) {
+        div[data-testid="stContainer"] {
+            background-color: #1e1e1e !important;
+            border: 1px solid #2e2e2e !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+        }
+        div[data-testid="stContainer"]:hover {
+            border-color: #444444 !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+        }
     }
     
     /* Card Typography Elements */
@@ -54,6 +68,7 @@ st.markdown("""
         font-size: 1.25rem !important;
         font-weight: 600 !important;
         margin-bottom: 2px !important;
+        color: inherit;
     }
     
     .card-author {
@@ -191,18 +206,16 @@ def open_poem_modal(row_index, title, author, date, content, full_df):
 
 
 # ─── HEADER INTERFACE ────────────────────────────────────────────────
-# Creates a clean, premium horizontal row mapping title on the left and the creator button on the right
 top_col1, top_col2 = st.columns([3, 1])
 with top_col1:
     st.markdown("<div class='main-title'>Our Poetry</div>", unsafe_allow_html=True)
 with top_col2:
-    # Right-aligned, crisp link configuration for modal injection trigger
     st.write("<div style='text-align: right; margin-top: 10px;'>", unsafe_allow_html=True)
     if st.button("Add Poetry 🖋️", key="trigger_submission_canvas"):
         open_submission_modal(df)
     st.write("</div>", unsafe_allow_html=True)
 
-st.write("") # Micro spacer
+st.write("") 
 
 # ─── HOME INTERFACE: ARCHIVE LIST & GRID SEARCH ───────────────────────
 search_query = st.text_input("🔍 Search collection...", placeholder="Search titles, authors, keywords...").strip().lower()
@@ -223,7 +236,6 @@ if not df.empty:
     if not filtered_df.empty:
         reversed_df = filtered_df.iloc[::-1]
         
-        # Clean 2-column layout with explicit container isolation cards
         grid_cols = st.columns(2)
         for i, row in enumerate(reversed_df.itertuples()):
             with grid_cols[i % 2]:
