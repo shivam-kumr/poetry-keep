@@ -6,11 +6,10 @@ from datetime import datetime
 # Page Configuration
 st.set_page_config(
     page_title="Our Poetry", 
-    layout="centered", 
-    initial_sidebar_state="collapsed" # Starts collapsed for a clean look, can be opened via the top-left '>'
+    layout="centered"
 )
 
-# Custom Styling Overrides for Premium Aesthetic
+# Custom Styling Overrides for Premium Minimalist Aesthetic
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
@@ -19,12 +18,19 @@ st.markdown("""
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }
     
-    /* Clean Title Formatting */
+    /* Clean Layout Header Elements */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
     .main-title {
         font-size: 2.25rem !important;
         font-weight: 600 !important;
         letter-spacing: -0.02em !important;
-        margin-bottom: 1.5rem !important;
+        margin: 0 !important;
     }
     
     /* Elegant Bordered Poetry Cards for Homepage Separation */
@@ -43,7 +49,7 @@ st.markdown("""
         border-color: rgba(128, 128, 128, 0.35) !important;
     }
     
-    /* Card Elements */
+    /* Card Typography Elements */
     .card-title {
         font-size: 1.25rem !important;
         font-weight: 600 !important;
@@ -59,7 +65,6 @@ st.markdown("""
         margin-bottom: 12px !important;
     }
     
-    /* Clean Sans-Serif Preview Text matching the homepage vibe */
     .card-preview {
         font-size: 0.95rem !important;
         line-height: 1.6 !important;
@@ -104,9 +109,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Application Header - Renamed directly to "Our Poetry"
-st.markdown("<div class='main-title'>Our Poetry</div>", unsafe_allow_html=True)
-
 # Connect to Google Sheets Pipeline
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -119,7 +121,31 @@ try:
 except Exception:
     df = pd.DataFrame(columns=["Date", "Title", "Content", "Author"])
 
-# ─── IMMERSIVE POPUP VIEWPORT (FIXED READABLE FONT) ───────────────────
+
+# ─── MODAL DIALOG: COMPOSE NEW POETRY CANVAS ─────────────────────────
+@st.dialog("🖋️ New Poetry Entry")
+def open_submission_modal(full_df):
+    author = st.text_input("Your Name / Pen Name", placeholder="e.g., Anonymous")
+    title = st.text_input("Poem Title (Optional)", placeholder="Leave blank for Untitled")
+    content = st.text_area("Write or Paste your poem here...", height=280)
+    
+    st.write("")
+    if st.button("Publish Poem", use_container_width=True):
+        if author.strip() and content.strip():
+            timestamp = datetime.now().strftime("%B %d, %Y")
+            final_title = title.strip() if title.strip() else "Untitled"
+            
+            new_row = pd.DataFrame([{"Date": timestamp, "Title": final_title, "Content": content, "Author": author}])
+            updated_df = pd.concat([full_df, new_row], ignore_index=True)
+            
+            conn.update(data=updated_df)
+            st.success(f"Successfully published '{final_title}'!")
+            st.rerun()
+        else:
+            st.error("Signature name and poem body text are required to publish.")
+
+
+# ─── MODAL DIALOG: IMMERSIVE POPUP VIEWPORT ───────────────────────────
 @st.dialog("📖 Reading Room")
 def open_poem_modal(row_index, title, author, date, content, full_df):
     st.markdown(f"<h3 style='font-size:1.6rem; font-weight:600; margin-bottom: 2px;'>{title}</h3>", unsafe_allow_html=True)
@@ -128,7 +154,6 @@ def open_poem_modal(row_index, title, author, date, content, full_df):
     tab1, tab2, tab3 = st.tabs(["Read", "✏️ Edit Draft", "🗑️ Remove"])
     
     with tab1:
-        # Replaced blurry cursive/serif with crisp, legible sans-serif structure matching homepage
         st.markdown(f'<div class="poetry-reader-viewport">{content}</div>', unsafe_allow_html=True)
         st.write("")
         
@@ -151,6 +176,7 @@ def open_poem_modal(row_index, title, author, date, content, full_df):
                 full_df.at[row_index, "Content"] = edit_content
                 
                 conn.update(data=full_df)
+                st.success("Poem updated successfully!")
                 st.rerun()
             else:
                 st.error("Signature and Body are required.")
@@ -163,29 +189,20 @@ def open_poem_modal(row_index, title, author, date, content, full_df):
             conn.update(data=updated_df)
             st.rerun()
 
-# ─── IMPROVEMENT 1: SUBMISSION CONTAINER MOVED TO LEFT SIDEBAR ───────
-with st.sidebar:
-    st.markdown("<h3 style='font-weight:600; margin-top:10px;'>🖋️ Add New Poem</h3>", unsafe_allow_html=True)
-    st.write("Write or paste a new piece into the collective collection below.")
-    st.write("")
-    
-    author = st.text_input("Your Name / Pen Name", placeholder="e.g., Anonymous")
-    title = st.text_input("Poem Title (Optional)", placeholder="Leave blank for Untitled")
-    content = st.text_area("Write or Paste here...", height=280)
-    
-    st.write("")
-    if st.button("Publish Poem Link", use_container_width=True):
-        if author and content:
-            timestamp = datetime.now().strftime("%B %d, %Y")
-            final_title = title.strip() if title.strip() else "Untitled"
-            
-            new_row = pd.DataFrame([{"Date": timestamp, "Title": final_title, "Content": content, "Author": author}])
-            updated_df = pd.concat([df, new_row], ignore_index=True)
-            
-            conn.update(data=updated_df)
-            st.rerun()
-        else:
-            st.error("Signature name and poem body text are required.")
+
+# ─── HEADER INTERFACE ────────────────────────────────────────────────
+# Creates a clean, premium horizontal row mapping title on the left and the creator button on the right
+top_col1, top_col2 = st.columns([3, 1])
+with top_col1:
+    st.markdown("<div class='main-title'>Our Poetry</div>", unsafe_allow_html=True)
+with top_col2:
+    # Right-aligned, crisp link configuration for modal injection trigger
+    st.write("<div style='text-align: right; margin-top: 10px;'>", unsafe_allow_html=True)
+    if st.button("Add Poetry 🖋️", key="trigger_submission_canvas"):
+        open_submission_modal(df)
+    st.write("</div>", unsafe_allow_html=True)
+
+st.write("") # Micro spacer
 
 # ─── HOME INTERFACE: ARCHIVE LIST & GRID SEARCH ───────────────────────
 search_query = st.text_input("🔍 Search collection...", placeholder="Search titles, authors, keywords...").strip().lower()
@@ -210,7 +227,7 @@ if not df.empty:
         grid_cols = st.columns(2)
         for i, row in enumerate(reversed_df.itertuples()):
             with grid_cols[i % 2]:
-                with st.container(): # Generates the sleek individual boundary box
+                with st.container():
                     st.markdown(f'<div class="card-title">{row.Title}</div>', unsafe_allow_html=True)
                     st.markdown(f'<div class="card-author">By {row.Author}</div>', unsafe_allow_html=True)
                     
@@ -230,4 +247,4 @@ if not df.empty:
     else:
         st.markdown("<p style='color:gray; font-style:italic;'>No archives match your search criteria.</p>", unsafe_allow_html=True)
 else:
-    st.markdown("<p style='color:gray; font-style:italic; text-align:center; padding: 40px 0;'>The collection is empty. Open the sidebar menu from the top-left to log the first piece.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:gray; font-style:italic; text-align:center; padding: 40px 0;'>The collection is empty. Click the 'Add Poetry 🖋️' button in the top right to log your first piece.</p>", unsafe_allow_html=True)
