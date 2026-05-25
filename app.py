@@ -15,27 +15,33 @@ try:
 except Exception:
     df = pd.DataFrame(columns=["Date", "Title", "Content", "Author"])
 
+# ─── NEW POP-UP CARD FUNCTION ────────────────────────────────────────
+@st.dialog("📖 Reading Poem")
+def open_poem_modal(title, author, date, content):
+    st.subheader(title)
+    st.caption(f"By: {author} | Saved on: {date}")
+    st.divider()
+    # Displays the full poem inside the popup with intact line breaks
+    st.text(content)
+    if st.button("Close"):
+        st.rerun()
+# ──────────────────────────────────────────────────────────────────────
+
 # Sidebar layout for adding poems
 st.sidebar.header("Add New Entry")
 author = st.sidebar.text_input("Your Name / Pen Name")
-title = st.sidebar.text_input("Poem Title (Optional)", placeholder="Leave blank for Untitled") # <-- ADDED PLACEHOLDER
+title = st.sidebar.text_input("Poem Title (Optional)", placeholder="Leave blank for Untitled")
 content = st.sidebar.text_area("Write or Paste here...", height=250)
 
 if st.sidebar.button("Save Note"):
-    # The title is removed from this checklist; only Author and Content are required to save!
     if author and content:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # If the title field is empty, automatically name it "Untitled"
         final_title = title.strip() if title.strip() else "Untitled"
         
-        # Format the new entry row including our final title decision
         new_row = pd.DataFrame([{"Date": timestamp, "Title": final_title, "Content": content, "Author": author}])
         updated_df = pd.concat([df, new_row], ignore_index=True)
         
-        # Push back to Google Sheets
         conn.update(data=updated_df)
-        
         st.sidebar.success(f"Saved successfully!")
         st.rerun()
     else:
@@ -50,15 +56,21 @@ if not df.empty:
     
     for i, row in enumerate(reversed_df.itertuples()):
         with cols[i % 3]:
-            with st.container(border=True): # Creates a card layout
-                # Handles displaying the title safely
+            with st.container(border=True): # Creates the Google Keep Card outline
                 card_title = getattr(row, 'Title', 'Untitled')
                 st.subheader(card_title)
                 
-                # Check if Author column exists and has a value
                 author_name = getattr(row, 'Author', 'Unknown Author')
-                st.caption(f"By: {author_name} | Saved on: {row.Date}")
+                st.caption(f"By: {author_name}")
                 
-                st.text(row.Content) 
+                # Show a short preview (first 150 characters) so the grid stays neat
+                poem_content = getattr(row, 'Content', '')
+                preview_text = poem_content if len(poem_content) <= 150 else poem_content[:150] + "..."
+                st.text(preview_text)
+                
+                # Elegant button that acts like "clicking the card"
+                # A unique key string ensures Streamlit knows exactly which button was pushed
+                if st.button("Expand Card 🔍", key=f"btn_{i}"):
+                    open_poem_modal(card_title, author_name, getattr(row, 'Date', ''), poem_content)
 else:
     st.info("No notes saved yet. Use the sidebar to add your first poem!")
