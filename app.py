@@ -33,14 +33,19 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 # Fetch fresh data from the Google Sheet
 try:
     df = conn.read(ttl="0d")
+    # Ensure all columns exist
     for col in ["Date", "Title", "Content", "Author"]:
         if col not in df.columns:
             df[col] = ""
+    
+    # CRUCIAL FIX: Force all columns to treat data as text/strings to avoid numeric float64 crashes
+    df = df.astype(object)
+    
 except Exception:
     df = pd.DataFrame(columns=["Date", "Title", "Content", "Author"])
 
 # ─── MODAL DIALOG: READ, EDIT & DIRECT DELETE ────────────────────────
-@st.dialog("📖 Poetry Management", width="large") # Increased dialog width to 'large' for roomy editing
+@st.dialog("📖 Poetry Management", width="large")
 def open_poem_modal(row_index, title, author, date, content, full_df):
     st.subheader(title)
     st.caption(f"By: {author} | Saved on: {date}")
@@ -52,28 +57,28 @@ def open_poem_modal(row_index, title, author, date, content, full_df):
         st.text(content)
         
     with tab2:
-        # Dynamically calculate line counts so the textarea expands naturally to match the poem's actual height
+        # Calculate dynamic text window height
         number_of_lines = len(content.split('\n'))
-        # Give it a healthy minimum height, but stretch it out up to 600px if it's a long poem
         dynamic_height = min(max(number_of_lines * 24, 250), 600)
         
-        # We put Title and Author in a 50/50 side-by-side grid split so they stay neat and compact out of the way
+        # Grid splits for meta data fields to stay compact
         meta_col1, meta_col2 = st.columns(2)
         with meta_col1:
-            edit_title = st.text_input("Edit Title", value=title, key=f"edit_title_{row_index}")
+            edit_title = st.text_input("Edit Title", value=str(title), key=f"edit_title_{row_index}")
         with meta_col2:
-            edit_author = st.text_input("Edit Author", value=author, key=f"edit_auth_{row_index}")
+            edit_author = st.text_input("Edit Author", value=str(author), key=f"edit_auth_{row_index}")
             
-        # The star of the show: An expanded, tall workspace area dedicated strictly to formatting
-        edit_content = st.text_area("Edit Poem Content", value=content, height=dynamic_height, key=f"edit_cont_{row_index}")
+        # Expanded text area block for writing
+        edit_content = st.text_area("Edit Poem Content", value=str(content), height=dynamic_height, key=f"edit_cont_{row_index}")
         
-        st.write("") # Tiny structural breathing space spacing
+        st.write("")
         if st.button("Save Changes", key=f"save_mod_{row_index}"):
-            if edit_author and edit_content:
-                full_df.at[row_index, "Author"] = edit_author
-                full_df.at[row_index, "Title"] = edit_title if edit_title.strip() else "Untitled"
+            if edit_author.strip() and edit_content.strip():
+                full_df.at[row_index, "Author"] = edit_author.strip()
+                full_df.at[row_index, "Title"] = edit_title.strip() if edit_title.strip() else "Untitled"
                 full_df.at[row_index, "Content"] = edit_content
                 
+                # Push back to Google Sheets
                 conn.update(data=full_df)
                 st.success("Poem updated successfully!")
                 st.rerun()
@@ -139,7 +144,6 @@ if not df.empty:
                     preview_text = poem_content if len(poem_content) <= 120 else poem_content[:120] + "..."
                     st.text(preview_text)
                     
-                    # IMPROVEMENT 1: Changed label text from "View / Manage" to just "Expand"
                     if st.button("Expand", key=f"open_{row.orig_idx}"):
                         open_poem_modal(
                             row.orig_idx, 
