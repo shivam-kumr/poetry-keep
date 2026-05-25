@@ -204,4 +204,30 @@ if not df.empty:
         filtered_df = df
 
     if not filtered_df.empty:
-        reversed_df = filtered_df.iloc
+        reversed_df = filtered_df.iloc[::-1]
+        
+        # Clean 2-column layout with explicit container isolation cards
+        grid_cols = st.columns(2)
+        for i, row in enumerate(reversed_df.itertuples()):
+            with grid_cols[i % 2]:
+                with st.container(): # Generates the sleek individual boundary box
+                    st.markdown(f'<div class="card-title">{row.Title}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="card-author">By {row.Author}</div>', unsafe_allow_html=True)
+                    
+                    raw_content = getattr(row, 'Content', '')
+                    snippet = raw_content if len(raw_content) <= 100 else raw_content[:100] + "..."
+                    st.markdown(f'<div class="card-preview">{snippet}</div>', unsafe_allow_html=True)
+                    
+                    if st.button("Read Piece →", key=f"open_{row.orig_idx}"):
+                        open_poem_modal(
+                            row.orig_idx, 
+                            row.Title, 
+                            row.Author, 
+                            getattr(row, 'Date', ''), 
+                            raw_content, 
+                            df.drop(columns=['orig_idx'])
+                        )
+    else:
+        st.markdown("<p style='color:gray; font-style:italic;'>No archives match your search criteria.</p>", unsafe_allow_html=True)
+else:
+    st.markdown("<p style='color:gray; font-style:italic; text-align:center; padding: 40px 0;'>The collection is empty. Open the sidebar menu from the top-left to log the first piece.</p>", unsafe_allow_html=True)
