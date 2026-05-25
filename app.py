@@ -33,33 +33,37 @@ st.markdown("""
         margin: 0 !important;
     }
     
-    /* FIX: Premium Bordered Poetry Cards with Light Soft Shadow and Solid Background */
-    div[data-testid="stContainer"] {
-        background-color: #ffffff !important; /* Soft premium white backing */
-        border: 1px solid #e2e8f0 !important; /* Clean, light separating border line */
+    /* CRITICAL CACHE BLOCK REMEDIAL FIX: High-priority scoped card class */
+    .premium-poetry-card {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 14px !important;
         padding: 24px !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important; /* Elegant subtle floating shadow */
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+        margin-bottom: 16px !important;
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
     
-    /* Smooth hover effect like Apple/Google cards */
-    div[data-testid="stContainer"]:hover {
+    .premium-poetry-card:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06) !important;
         border-color: #cbd5e1 !important;
     }
     
+    /* Deep target Streamlit internal container boxes to force light background rendering */
+    div[data-testid="stVComponent"] > div[data-testid="stContainer"] {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+        border-radius: 14px !important;
+    }
+    
     /* Support for Native Dark Mode Theme if turned on */
     @media (prefers-color-scheme: dark) {
-        div[data-testid="stContainer"] {
+        .premium-poetry-card, div[data-testid="stVComponent"] > div[data-testid="stContainer"] {
             background-color: #1e1e1e !important;
             border: 1px solid #2e2e2e !important;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
-        }
-        div[data-testid="stContainer"]:hover {
-            border-color: #444444 !important;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
         }
     }
     
@@ -68,7 +72,6 @@ st.markdown("""
         font-size: 1.25rem !important;
         font-weight: 600 !important;
         margin-bottom: 2px !important;
-        color: inherit;
     }
     
     .card-author {
@@ -239,6 +242,8 @@ if not df.empty:
         grid_cols = st.columns(2)
         for i, row in enumerate(reversed_df.itertuples()):
             with grid_cols[i % 2]:
+                # Wrap everything in a dedicated markdown div box to enforce card separation styles explicitly
+                st.markdown(f'<div class="premium-poetry-card">', unsafe_allow_html=True)
                 with st.container():
                     st.markdown(f'<div class="card-title">{row.Title}</div>', unsafe_allow_html=True)
                     st.markdown(f'<div class="card-author">By {row.Author}</div>', unsafe_allow_html=True)
@@ -256,6 +261,7 @@ if not df.empty:
                             raw_content, 
                             df.drop(columns=['orig_idx'])
                         )
+                st.markdown(f'</div>', unsafe_allow_html=True)
     else:
         st.markdown("<p style='color:gray; font-style:italic;'>No archives match your search criteria.</p>", unsafe_allow_html=True)
 else:
