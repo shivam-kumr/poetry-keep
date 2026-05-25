@@ -108,8 +108,8 @@ if st.sidebar.button("Save Note"):
 search_query = st.text_input("🔍 Search poems by title, author, or keywords...", "").strip().lower()
 
 if not df.empty:
-    # Tracking original spreadsheet index row number so edits map to the right place
-    df['_orig_idx'] = df.index
+    # CHANGED: Using 'orig_idx' without the leading underscore so it doesn't break loop rendering
+    df['orig_idx'] = df.index
     
     # Filter the view if someone uses the search bar
     if search_query:
@@ -137,14 +137,14 @@ if not df.empty:
                     st.text(preview_text)
                     
                     # Sleek link button trigger
-                    if st.button("View / Manage", key=f"open_{row._orig_idx}"):
+                    if st.button("View / Manage", key=f"open_{row.orig_idx}"):
                         open_poem_modal(
-                            row._orig_idx, 
+                            row.orig_idx, 
                             row.Title, 
                             row.Author, 
                             getattr(row, 'Date', ''), 
                             poem_content, 
-                            df.drop(columns=['_orig_idx']) # Clean out helper index before saving
+                            df.drop(columns=['orig_idx']) # Clean out helper index before saving
                         )
     else:
         st.info("No matching poems found for your search query.")
