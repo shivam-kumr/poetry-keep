@@ -42,7 +42,33 @@ st.markdown("""
         border-color: #cbd5e1 !important;
     }
     
-    /* Support for Native Dark Mode Theme */
+    /* LIGHT MODE TEXT COLOR ENFORCEMENT */
+    .card-title {
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 4px !important;
+        color: #1e293b !important; /* Rich Dark Slate for Light Mode visibility */
+    }
+    
+    .card-author {
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        color: #64748b !important; /* Clear Slate Muted Gray */
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 12px !important;
+    }
+    
+    .card-preview {
+        font-size: 0.95rem !important;
+        line-height: 1.6 !important;
+        color: #334155 !important; /* Crisp Dark Charcoal for pristine light mode reading */
+        opacity: 0.95;
+        margin-bottom: 16px !important;
+        white-space: pre-wrap !important;
+    }
+
+    /* AUTOMATIC NATIVE DARK MODE ENFORCEMENT STYLE RULES */
     @media (prefers-color-scheme: dark) {
         .premium-poetry-card {
             background-color: #1e1e1e !important;
@@ -54,32 +80,8 @@ st.markdown("""
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
         }
         .card-title { color: #ffffff !important; }
-    }
-    
-    /* Card Typography Elements */
-    .card-title {
-        font-size: 1.25rem !important;
-        font-weight: 600 !important;
-        margin-bottom: 4px !important;
-        color: #1e293b;
-    }
-    
-    .card-author {
-        font-size: 0.8rem !important;
-        font-weight: 500 !important;
-        color: #86868b !important;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 12px !important;
-    }
-    
-    .card-preview {
-        font-size: 0.95rem !important;
-        line-height: 1.6 !important;
-        color: inherit;
-        opacity: 0.85;
-        margin-bottom: 16px !important;
-        white-space: pre-wrap !important;
+        .card-author { color: #86868b !important; }
+        .card-preview { color: #e2e8f0 !important; } /* Clear off-white text for dark backgrounds */
     }
 
     /* Minimalist Underline Action Link Buttons */
@@ -233,10 +235,10 @@ if not df.empty:
         grid_cols = st.columns(2)
         for i, row in enumerate(reversed_df.itertuples()):
             with grid_cols[i % 2]:
-                # CLEAN INJECTION: The HTML elements and text are fully locked together within the card block
                 raw_content = getattr(row, 'Content', '')
                 snippet = raw_content if len(raw_content) <= 100 else raw_content[:100] + "..."
                 
+                # Enhanced clean semantic wrap: Titles and text colors are strictly configured to contrast backgrounds perfectly
                 card_html = f"""
                 <div class="premium-poetry-card">
                     <div class="card-title">{row.Title}</div>
@@ -246,7 +248,6 @@ if not df.empty:
                 """
                 st.markdown(card_html, unsafe_allow_html=True)
                 
-                # The button sits neatly right under the layout text block
                 if st.button("Read Piece →", key=f"open_{row.orig_idx}"):
                     open_poem_modal(
                         row.orig_idx, 
